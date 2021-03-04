@@ -17,14 +17,17 @@ module StripeMock
         id = new_id('pi')
 
         ensure_payment_intent_required_params(params)
-        status = case params[:amount]
+
+        last4 = payment_methods[params[:payment_method]][:card][:number][-4..-1].to_i if params[:payment_method]
+
+        status = case last4
         when 3184 then 'requires_action'
         when 3178 then 'requires_payment_method'
         when 3055 then 'requires_capture'
         else
           'succeeded'
         end
-        last_payment_error = params[:amount] == 3178 ? last_payment_error_generator(code: 'card_declined', decline_code: 'insufficient_funds', message: 'Not enough funds.') : nil
+        last_payment_error = last4 == 3178 ? last_payment_error_generator(code: 'card_declined', decline_code: 'insufficient_funds', message: 'Not enough funds.') : nil
         payment_intents[id] = Data.mock_payment_intent(
           params.merge(
             id: id,
